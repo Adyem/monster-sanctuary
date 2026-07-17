@@ -1,0 +1,24 @@
+# This repository lives inside the Steam installation directory.
+# Keep copyrighted game data, binaries, saves, and local mod-loader files out of Git.
+*
+
+# Repository files
+!.gitignore
+!README.md
+!agents.md
+!/src/
+!/src/MonsterSanctuaryMod/
+!/src/MonsterSanctuaryMod/*.cs
+!/src/MonsterSanctuaryMod/*.csproj
+!/scripts/
+!/scripts/*.ps1
+
+# Keep build output and installed loader/plugin files local.
+/bin/
+/obj/
+/BepInEx/
+/doorstop_config.ini
+/.doorstop_version
+/winhttp.dll
+/output_log.txt
+/LogOutput.log
