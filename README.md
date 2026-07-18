@@ -41,10 +41,11 @@ registry.
   Item levels are clamped to 1-42.
 - Common items have one modifier. Magic has two, Rare has three, Epic has
   four, and Legendary has five plus one triggered power.
-- Utility modifiers are Physical Defense, Magical Defense, Health, Critical
-  Damage, Critical Chance, Mana, and Mana Regeneration.
-- Attack and Magic are weapon-only modifiers. Accessories cannot roll either
-  offensive stat.
+- Utility modifiers include Physical Defense, Magical Defense, flat and
+  percentage Maximum Health, Critical Damage, Critical Chance, Mana, Mana
+  Regeneration, Damage Reduction, Buff Effect, and Shield Effect.
+- Attack, Magic, hybrid offense, and Poison/Burn/Congeal Damage are
+  weapon-only modifiers. Accessories cannot roll damage-oriented modifiers.
 - Every weapon has exactly one offensive profile: Attack, Magic, or hybrid.
   Hybrid weapons receive both Attack and Magic at 70% of the corresponding
   single-stat magnitude, making them flexible but individually weaker in each
@@ -52,6 +53,11 @@ registry.
 - Physical and Magical Defense are separate mode-specific ratings. They
   reduce only the matching incoming damage type and are capped so they remain
   complementary to the base game's Defense stat.
+- Each Damage Reduction modifier is exactly 5% at every item level and roll
+  quality. While the mode is active, the combined reduction from Defense,
+  percentage reduction, defensive buffs, and the mode's typed defenses is
+  limited to 50% for player monsters. This cap does not turn shields into
+  damage reduction; shields remain a separate resource.
 - The blacksmith increases rarity instead of item level. Each rarity increase
   retains every existing modifier and roll, then adds one new utility
   modifier. Item level remains the level at which the item was found or
@@ -113,10 +119,32 @@ level range:
 | Common | 70% | 25% |
 
 Legendary powers are event-driven effects rather than another flat stat. The
-current pool can shield a healed ally, cleanse or buff a healed ally, cleanse
-or buff a shielded ally, remove an enemy buff on a damaging hit, or grant a
-shield when the wearer receives a buff. Per-action guards prevent a multi-hit
-or repeated callback from firing the same power repeatedly on one target.
+pool contains seventeen powers:
+
+| Power | Effect and limit |
+| --- | --- |
+| Barrier Bloom | Healing also shields for 25% of the heal |
+| Purifying Touch | The first heal on each target per action removes a debuff |
+| Rallying Light | The first heal on each target per action grants a random buff |
+| Cleansing Ward | The first shield on each target per action removes a debuff |
+| Empowering Ward | The first shield on each target per action grants a random buff |
+| Spellbreaker | The first damaging hit on each target per action removes a buff |
+| Inspiring Aegis | Receiving a buff grants shield equal to 8% of maximum health |
+| Hexing Edge | The first damaging hit on each target per action applies a random debuff |
+| Vampiric Pulse | The first damaging hit on each target per action heals for 10% of actual damage |
+| Critical Momentum | The first critical damage or healing result per action grants a random buff |
+| Mana Battery | The first completed action each turn restores 8% maximum mana |
+| Mending Ward | The first shield on each target per action heals for 15% of its value |
+| Arcane Shelter | The first heal on each target per action restores 5% maximum mana |
+| Retaliatory Ward | The first hit taken from an action grants shield equal to 25% of that hit |
+| Last Bastion | Once per combat, reaching 30% health or less grants 20% maximum-health shield |
+| Phoenix Oath | Once per combat, fatal damage is survived with 10% health |
+| Opening Gambit | Enter combat with two random buffs |
+
+Action, turn, and combat guards prevent multi-hit attacks, repeated callbacks,
+or extra actions from multiplying effects beyond their stated limits. Powers
+can still interact intentionally—for example, Opening Gambit can activate
+Inspiring Aegis when both appear on a monster's equipped Legendary items.
 
 ## Balance basis
 
@@ -128,6 +156,23 @@ roughly 100 Defense, 1000 Health, 120 Mana, or 60 Mana Regeneration, and basic
 power budget among one to five independently rolled modifiers; Legendary
 powers sit above that budget. A hybrid weapon applies 70% of the normal
 weapon-offense curve to both Attack and Magic.
+
+The percentage-effect modifiers use these unrolled level endpoints. Their
+normal 85%-115% roll quality is then applied, except Damage Reduction, which
+always remains exactly 5%:
+
+| Modifier | Item level 1 | Item level 42 | Application |
+| --- | ---: | ---: | --- |
+| Maximum Health | 3% | 8% | Multiplies the wearer's final health calculation |
+| Damage Reduction | 5% | 5% | Native equipment reduction; subject to the 50% combined cap |
+| Poison, Burn & Congeal Damage | 5% | 12% | Weapon-only; raises enemies' incoming DOT multipliers through the game's enemy-stat pass |
+| Buff Effect | 3% | 8% | Multiplies the strength of buffs affecting the wearer |
+| Shield Effect | 5% | 15% | Uses the game's native outgoing shield multiplier |
+
+DOT power deliberately excludes Shock because Shock is a debuff/resource
+interaction rather than a periodic damage trigger in this game. Applying DOT
+power through enemy-stat calculation also keeps Poison, Burn, and Congeal on
+the same calculation path used by the base game's comparable passive effects.
 
 Balance references:
 

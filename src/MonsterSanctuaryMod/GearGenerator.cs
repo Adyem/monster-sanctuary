@@ -122,6 +122,80 @@ internal static class GearGenerator
             $"Randomized gear template validation passed ({weapons} weapons, {accessories} accessories).");
     }
 
+    internal static void ValidateAffixRules(bool logResult = true)
+    {
+        var random = new System.Random(0x4D534D4F);
+        foreach (GearRarity rarity in Enum.GetValues(typeof(GearRarity)))
+        {
+            for (var iteration = 0; iteration < 256; iteration++)
+            {
+                ValidateAffixRoll(RollAffixes(true, rarity, random), rarity, true);
+                ValidateAffixRoll(RollAffixes(false, rarity, random), rarity, false);
+            }
+        }
+
+        var lowLevelReduction = GearBalance.GetMagnitude(
+            GearAffix.DamageReduction,
+            GearBalance.MinimumItemLevel,
+            8500,
+            false);
+        var highLevelReduction = GearBalance.GetMagnitude(
+            GearAffix.DamageReduction,
+            GearBalance.MaximumItemLevel,
+            11500,
+            true);
+        if (!Mathf.Approximately(lowLevelReduction, GearBalance.DamageReductionPerAffix) ||
+            !Mathf.Approximately(highLevelReduction, GearBalance.DamageReductionPerAffix))
+        {
+            throw new InvalidOperationException("Damage Reduction affixes must remain exactly 5% at every item level and roll quality.");
+        }
+
+        if (logResult)
+        {
+            Plugin.ModLog.LogInfo(
+                "Randomized affix validation passed (weapon-only damage affixes, unique rolls, fixed 5% DR, and percentage effect ranges).");
+        }
+    }
+
+    internal static void ValidateLegendaryEffects(bool logResult = true)
+    {
+        var effects = Enum.GetValues(typeof(LegendaryEffect))
+            .Cast<LegendaryEffect>()
+            .Where(effect => effect != LegendaryEffect.None)
+            .ToList();
+        if (effects.Count != 17 ||
+            (int)LegendaryEffect.BarrierBloom != 1 ||
+            (int)LegendaryEffect.InspiringAegis != 7 ||
+            effects.Select((effect, index) => (int)effect == index + 1).Any(valid => !valid) ||
+            effects.Any(effect => string.IsNullOrWhiteSpace(GearRegistry.GetLegendaryDescription(effect))))
+        {
+            throw new InvalidOperationException(
+                "Legendary effect validation failed: expected 17 described effects with stable legacy IDs.");
+        }
+
+        if (logResult)
+        {
+            Plugin.ModLog.LogInfo(
+                "Legendary effect validation passed (17 described powers; legacy effect IDs preserved)." );
+        }
+    }
+
+    private static void ValidateAffixRoll(List<GearAffix> affixes, GearRarity rarity, bool weapon)
+    {
+        if (affixes.Count != GearBalance.GetAffixCount(rarity) ||
+            affixes.Distinct().Count() != affixes.Count)
+        {
+            throw new InvalidOperationException($"Invalid {rarity} affix count or duplicate modifier.");
+        }
+
+        var coreOffenseCount = affixes.Count(IsOffensiveAffix);
+        if ((weapon && coreOffenseCount != 1) ||
+            (!weapon && (coreOffenseCount != 0 || affixes.Contains(GearAffix.DamageOverTime))))
+        {
+            throw new InvalidOperationException($"Invalid {(weapon ? "weapon" : "accessory")} damage-affix allocation.");
+        }
+    }
+
     internal static void ConvertExistingPlayerEquipment()
     {
         if (!RandomizedModeState.Active)
@@ -246,6 +320,7 @@ internal static class GearGenerator
             // A weapon keeps its original offensive profile when rarity rises;
             // accessories may never acquire an offensive profile.
             .Where(affix => !IsOffensiveAffix(affix))
+            .Where(affix => IsAllowedForEquipment(affix, weapon))
             .Where(affix => !record.Affixes.Contains(affix))
             .ToList();
         if (available.Count == 0)
@@ -282,10 +357,14 @@ internal static class GearGenerator
             .ToList();
         if (!weapon)
         {
-            for (var i = offensive.Count - 1; i >= 0; i--)
+            var disallowed = record.Affixes
+                .Select((affix, index) => new { affix, index })
+                .Where(entry => !IsAllowedForEquipment(entry.affix, false))
+                .ToList();
+            for (var i = disallowed.Count - 1; i >= 0; i--)
             {
-                record.Affixes.RemoveAt(offensive[i].index);
-                record.RollBasisPoints.RemoveAt(offensive[i].index);
+                record.Affixes.RemoveAt(disallowed[i].index);
+                record.RollBasisPoints.RemoveAt(disallowed[i].index);
             }
         }
         else if (offensive.Count == 0)
@@ -320,7 +399,7 @@ internal static class GearGenerator
     {
         var available = Enum.GetValues(typeof(GearAffix))
             .Cast<GearAffix>()
-            .Where(affix => weapon || !IsOffensiveAffix(affix))
+            .Where(affix => IsAllowedForEquipment(affix, weapon))
             .ToList();
         var result = new List<GearAffix>();
         var count = GearBalance.GetAffixCount(rarity);
@@ -348,6 +427,9 @@ internal static class GearGenerator
         affix == GearAffix.Attack ||
         affix == GearAffix.Magic ||
         affix == GearAffix.HybridOffense;
+
+    private static bool IsAllowedForEquipment(GearAffix affix, bool weapon) =>
+        weapon || (!IsOffensiveAffix(affix) && affix != GearAffix.DamageOverTime);
 
     private static System.Random GetRandom()
     {

@@ -10,7 +10,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     private const string ModGuid = "com.adyem.monstersanctuary.randomizedgear";
     private const string ModName = "Randomized Gear Mode";
-    private const string ModVersion = "0.4.0";
+    private const string ModVersion = "0.6.0";
 
     internal static ManualLogSource ModLog { get; private set; } = null!;
     internal static ConfigEntry<bool> DebugLogging { get; private set; } = null!;

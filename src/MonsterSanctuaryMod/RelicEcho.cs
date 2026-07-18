@@ -66,14 +66,14 @@ internal static class RelicEchoCatalog
         // Flat relic stats are deliberately excluded. The generated affix budget
         // remains authoritative, while percentage effects, drawbacks and equip
         // restrictions form the inherited Relic Echo.
-        equipment.DamageBonus = relic.DamageBonus;
-        equipment.DamageReduction = relic.DamageReduction;
-        equipment.DodgeChance = relic.DodgeChance;
-        equipment.FirstHitDamageIncrease = relic.FirstHitDamageIncrease;
-        equipment.HealBonus = relic.HealBonus;
-        equipment.ShieldBonus = relic.ShieldBonus;
-        equipment.LifestealPercent = relic.LifestealPercent;
-        equipment.NonCritDamage = relic.NonCritDamage;
+        equipment.DamageBonus += relic.DamageBonus;
+        equipment.DamageReduction += relic.DamageReduction;
+        equipment.DodgeChance += relic.DodgeChance;
+        equipment.FirstHitDamageIncrease += relic.FirstHitDamageIncrease;
+        equipment.HealBonus += relic.HealBonus;
+        equipment.ShieldBonus += relic.ShieldBonus;
+        equipment.LifestealPercent += relic.LifestealPercent;
+        equipment.NonCritDamage += relic.NonCritDamage;
         equipment.IsInstrument = relic.IsInstrument;
         equipment.OnlyFamiliars = relic.OnlyFamiliars;
         equipment.OnlyUnshifted = relic.OnlyUnshifted;

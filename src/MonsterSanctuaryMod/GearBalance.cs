@@ -7,6 +7,8 @@ internal static class GearBalance
 {
     internal const int MinimumItemLevel = 1;
     internal const int MaximumItemLevel = 42;
+    internal const float MaximumTotalDamageReduction = 0.50f;
+    internal const float DamageReductionPerAffix = 0.05f;
 
     internal static int GetAffixCount(GearRarity rarity) => rarity switch
     {
@@ -39,6 +41,13 @@ internal static class GearBalance
 
     internal static float GetMagnitude(GearAffix affix, int itemLevel, int rollBasisPoints, bool weapon)
     {
+        // Damage reduction is intentionally independent of item level and roll
+        // quality. Every occurrence represents the same modest five percent.
+        if (affix == GearAffix.DamageReduction)
+        {
+            return DamageReductionPerAffix;
+        }
+
         var progress = Mathf.InverseLerp(MinimumItemLevel, MaximumItemLevel, itemLevel);
         var roll = Mathf.Clamp(rollBasisPoints / 10000f, 0.85f, 1.15f);
         var value = affix switch
@@ -53,6 +62,10 @@ internal static class GearBalance
             GearAffix.CritChance => Mathf.Lerp(0.025f, 0.09f, progress),
             GearAffix.Mana => Mathf.Lerp(20f, 80f, progress),
             GearAffix.ManaRegeneration => Mathf.Lerp(8f, 32f, progress),
+            GearAffix.HealthPercent => Mathf.Lerp(0.03f, 0.08f, progress),
+            GearAffix.DamageOverTime => Mathf.Lerp(0.05f, 0.12f, progress),
+            GearAffix.BuffEffect => Mathf.Lerp(0.03f, 0.08f, progress),
+            GearAffix.ShieldEffect => Mathf.Lerp(0.05f, 0.15f, progress),
             _ => 0f
         };
 

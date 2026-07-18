@@ -225,6 +225,29 @@ internal static class GearRegistry
         return total;
     }
 
+    internal static float GetAffixMagnitude(Equipment? equipment, GearAffix soughtAffix)
+    {
+        if (!TryGetRecord(equipment, out var record) || equipment == null)
+        {
+            return 0f;
+        }
+
+        var total = 0f;
+        var weapon = equipment.Type == Equipment.EquipmentType.Weapon;
+        for (var i = 0; i < record.Affixes.Count; i++)
+        {
+            if (record.Affixes[i] == soughtAffix)
+            {
+                total += GearBalance.GetMagnitude(
+                    soughtAffix,
+                    record.ItemLevel,
+                    record.RollBasisPoints[i],
+                    weapon);
+            }
+        }
+        return total;
+    }
+
     internal static string GetDisplayName(Equipment equipment, GearRecord record)
     {
         var source = GetSourceEquipment(record);
@@ -234,7 +257,23 @@ internal static class GearRegistry
             baseName = equipment.Type == Equipment.EquipmentType.Weapon ? "Weapon" : "Accessory";
         }
 
-        return $"[{record.Rarity}] {baseName}  iLvl {record.ItemLevel}";
+        var displayName = $"[{record.Rarity}] {baseName}  iLvl {record.ItemLevel}";
+        return record.Rarity switch
+        {
+            GearRarity.Magic => GameDefines.FormatTextRGB(
+                displayName,
+                new Color(0.20f, 1.00f, 0.20f, 1.00f)),
+            GearRarity.Rare => GameDefines.FormatTextRGB(
+                displayName,
+                new Color(0.25f, 0.55f, 1.00f, 1.00f)),
+            GearRarity.Epic => GameDefines.FormatTextRGB(
+                displayName,
+                new Color(0.75f, 0.30f, 1.00f, 1.00f)),
+            GearRarity.Legendary => GameDefines.FormatTextRGB(
+                displayName,
+                new Color(1.00f, 0.55f, 0.10f, 1.00f)),
+            _ => displayName
+        };
     }
 
     internal static string GetAdditionalTooltip(Equipment equipment, GearRecord record)
@@ -249,17 +288,29 @@ internal static class GearRegistry
         for (var i = 0; i < record.Affixes.Count; i++)
         {
             var affix = record.Affixes[i];
-            if (affix != GearAffix.PhysicalDefense && affix != GearAffix.MagicalDefense)
+            if (affix != GearAffix.PhysicalDefense &&
+                affix != GearAffix.MagicalDefense &&
+                affix != GearAffix.HealthPercent &&
+                affix != GearAffix.DamageOverTime &&
+                affix != GearAffix.BuffEffect &&
+                affix != GearAffix.ShieldEffect)
             {
                 continue;
             }
 
-            var amount = Mathf.RoundToInt(GearBalance.GetMagnitude(
+            var magnitude = GearBalance.GetMagnitude(
                 affix,
                 record.ItemLevel,
                 record.RollBasisPoints[i],
-                weapon));
-            lines.Add($"+{amount} {GetAffixName(affix)}");
+                weapon);
+            if (affix == GearAffix.PhysicalDefense || affix == GearAffix.MagicalDefense)
+            {
+                lines.Add($"+{Mathf.RoundToInt(magnitude)} {GetAffixName(affix)}");
+            }
+            else
+            {
+                lines.Add($"+{Mathf.RoundToInt(magnitude * 100f)}% {GetAffixName(affix)}");
+            }
         }
 
         if (record.LegendaryEffect != LegendaryEffect.None)
@@ -460,6 +511,8 @@ internal static class GearRegistry
                 case GearAffix.CritChance: equipment.CritChance += amount; break;
                 case GearAffix.Mana: equipment.Mana += Mathf.RoundToInt(amount); break;
                 case GearAffix.ManaRegeneration: equipment.ManaRegeneration += Mathf.RoundToInt(amount); break;
+                case GearAffix.DamageReduction: equipment.DamageReduction += amount; break;
+                case GearAffix.ShieldEffect: equipment.ShieldBonus += amount; break;
             }
         }
 
@@ -558,18 +611,33 @@ internal static class GearRegistry
         GearAffix.HybridOffense => "Attack & Magic (70%)",
         GearAffix.PhysicalDefense => "Physical Defense",
         GearAffix.MagicalDefense => "Magical Defense",
+        GearAffix.HealthPercent => "Maximum Health",
+        GearAffix.DamageReduction => "Damage Reduction",
+        GearAffix.DamageOverTime => "Poison, Burn & Congeal Damage",
+        GearAffix.BuffEffect => "Buff Effect",
+        GearAffix.ShieldEffect => "Shield Effect",
         _ => affix.ToString()
     };
 
-    private static string GetLegendaryDescription(LegendaryEffect effect) => effect switch
+    internal static string GetLegendaryDescription(LegendaryEffect effect) => effect switch
     {
-        LegendaryEffect.BarrierBloom => "healing an ally also shields them for 25% of the heal",
-        LegendaryEffect.PurifyingTouch => "the first heal on each target removes one debuff",
-        LegendaryEffect.RallyingLight => "the first heal on each target grants a random buff",
-        LegendaryEffect.CleansingWard => "the first shield on each target removes one debuff",
-        LegendaryEffect.EmpoweringWard => "the first shield on each target grants a random buff",
-        LegendaryEffect.Spellbreaker => "the first damaging hit on each target removes one buff",
-        LegendaryEffect.InspiringAegis => "receiving a buff grants a shield equal to 8% of maximum health",
+        LegendaryEffect.BarrierBloom => "Barrier Bloom — healing an ally also shields them for 25% of the heal",
+        LegendaryEffect.PurifyingTouch => "Purifying Touch — the first heal on each target removes one debuff",
+        LegendaryEffect.RallyingLight => "Rallying Light — the first heal on each target grants a random buff",
+        LegendaryEffect.CleansingWard => "Cleansing Ward — the first shield on each target removes one debuff",
+        LegendaryEffect.EmpoweringWard => "Empowering Ward — the first shield on each target grants a random buff",
+        LegendaryEffect.Spellbreaker => "Spellbreaker — the first damaging hit on each target removes one buff",
+        LegendaryEffect.InspiringAegis => "Inspiring Aegis — receiving a buff grants a shield equal to 8% of maximum health",
+        LegendaryEffect.HexingEdge => "Hexing Edge — the first damaging hit on each target applies one random debuff",
+        LegendaryEffect.VampiricPulse => "Vampiric Pulse — the first damaging hit on each target heals for 10% of damage dealt",
+        LegendaryEffect.CriticalMomentum => "Critical Momentum — the first critical result of an action grants a random buff",
+        LegendaryEffect.ManaBattery => "Mana Battery — the first completed action each turn restores 8% of maximum mana",
+        LegendaryEffect.MendingWard => "Mending Ward — the first shield on each target also heals for 15% of the shield",
+        LegendaryEffect.ArcaneShelter => "Arcane Shelter — the first heal on each target restores 5% of their maximum mana",
+        LegendaryEffect.RetaliatoryWard => "Retaliatory Ward — the first hit taken from an action grants shield equal to 25% of its damage",
+        LegendaryEffect.LastBastion => "Last Bastion — once per combat, dropping to 30% health or less grants 20% maximum-health shield",
+        LegendaryEffect.PhoenixOath => "Phoenix Oath — once per combat, survive fatal damage with 10% health",
+        LegendaryEffect.OpeningGambit => "Opening Gambit — enter combat with two random buffs",
         _ => string.Empty
     };
 

@@ -23,7 +23,12 @@ internal enum GearAffix
     CritDamage,
     CritChance,
     Mana,
-    ManaRegeneration
+    ManaRegeneration,
+    HealthPercent,
+    DamageReduction,
+    DamageOverTime,
+    BuffEffect,
+    ShieldEffect
 }
 
 internal enum LegendaryEffect
@@ -35,7 +40,17 @@ internal enum LegendaryEffect
     CleansingWard,
     EmpoweringWard,
     Spellbreaker,
-    InspiringAegis
+    InspiringAegis,
+    HexingEdge,
+    VampiricPulse,
+    CriticalMomentum,
+    ManaBattery,
+    MendingWard,
+    ArcaneShelter,
+    RetaliatoryWard,
+    LastBastion,
+    PhoenixOath,
+    OpeningGambit
 }
 
 internal enum GearSource

@@ -15,6 +15,8 @@ internal static class GameStartupValidationPatch
     {
         LegendaryTokenRegistry.EnsureRegistered();
         GearGenerator.ValidateTemplates();
+        GearGenerator.ValidateAffixRules();
+        GearGenerator.ValidateLegendaryEffects();
         UpgradeEconomy.ValidateRuntimeAssets();
         RelicEchoCatalog.Validate();
     }
@@ -732,7 +734,11 @@ internal static class UpgradeHoverPatch
 [HarmonyPatch(typeof(CombatController), nameof(CombatController.StartCombat))]
 internal static class LegendaryTokenCombatStartPatch
 {
-    private static void Prefix() => LegendaryTokenDrops.BeginCombat();
+    private static void Prefix()
+    {
+        LegendaryTokenDrops.BeginCombat();
+        LegendaryEffectRuntime.BeginCombat();
+    }
 }
 
 [HarmonyPatch(typeof(PopupController), nameof(PopupController.ShowRewards))]
@@ -801,7 +807,12 @@ internal static class TypedDefensePatch
         var rating = GearRegistry.GetTypedDefense(___monster, action.Type);
         if (rating > 0f)
         {
-            damage *= 1f - GearBalance.GetTypedDefenseReduction(rating);
+            var remainingBeforeTypedDefense =
+                PercentageAffixRuntime.GetRemainingDamageMultiplierIncludingBuffs(___monster);
+            var reduction = GearBalance.GetTypedDefenseReduction(rating);
+            damage *= PercentageAffixRuntime.ClampReductionLayer(
+                remainingBeforeTypedDefense,
+                1f - reduction);
         }
     }
 }
