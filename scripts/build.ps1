@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
 $project = Join-Path $root 'src\MonsterSanctuaryMod\MonsterSanctuaryMod.csproj'
-$output = Join-Path $root 'src\MonsterSanctuaryMod\bin\Release\netstandard2.0'
+$output = Join-Path $root 'src\MonsterSanctuaryMod\bin\Release\net472'
 $plugins = Join-Path $root 'BepInEx\plugins'
 
 dotnet build $project --configuration Release

@@ -28,9 +28,12 @@ in `Sources`.
 
 - `src/MonsterSanctuaryMod/` contains original C# source.
 - `src/MonsterSanctuaryMod/MonsterSanctuaryMod.csproj` targets
-  `netstandard2.0` and references assemblies from this installation.
-- `src/MonsterSanctuaryMod/Plugin.cs` is the current minimal
-  `BaseUnityPlugin` entry point.
+  `net472` and references assemblies from this installation. This target was
+  verified against the local Mono runtime; a `netstandard2.0` build failed at
+  plugin load because this installation does not provide the required facade.
+- `src/MonsterSanctuaryMod/Plugin.cs` is the `BaseUnityPlugin` entry point for
+  the opt-in Randomized Gear game mode. Its supporting generation, registry,
+  balance, and Harmony patch code lives beside it in the same directory.
 - `scripts/build.ps1` builds Release and copies the plugin DLL into
   `BepInEx/plugins`.
 - `Monster Sanctuary_Data/Managed/Assembly-CSharp.dll` is the main managed
@@ -257,6 +260,18 @@ For stat work, inspect `Monster`, `MonsterStats`, `EquipmentManager`,
 `SkillManager.CalculateTeamMonsterStats`, and
 `SkillManager.CalculateEnemyStats`.
 
+`GameModeManager.RelicMode` identifies saves using Relics of Chaos. Relic
+equipment is marked by `Equipment.IsRelic`; this installation contains both
+plain `Equipment` relics and specialized types such as `EquipmentAddBuff`,
+`EquipmentDamageHit`, `EquipmentElementalDamageIncrease`,
+`EquipmentRemoveDebuff`, and `EquipmentShield`. Their behavior is dispatched
+through virtual callbacks including `OnCombatStart`, `OnTurnStart`,
+`OnActionStarted`, `OnActionDamageStarted`, `OnActionDamageHit`,
+`OnCriticalHit`, and `GetBuffStackCountIncrease`. Preserve restrictions held
+in `MonsterTypeRestriction`, `OnlyFamiliars`, and `OnlyUnshifted` when adapting
+a relic effect. Do not infer a relic's special behavior from its display name;
+inspect its concrete local type and fields.
+
 ### Inventory, rewards, and persistence
 
 `InventoryManager` exposes item lists such as `Weapons`, `Accessories`,
@@ -387,7 +402,7 @@ The normal build is:
 .\scripts\build.ps1
 ```
 
-The project currently compiles for `netstandard2.0`. References to BepInEx,
+The project currently compiles for `net472`. References to BepInEx,
 Unity, Harmony, and game assemblies are machine-local and must not be copied
 into source control. Commit original `.cs`, `.csproj`, `.ps1`, documentation,
 and configuration templates only. Do not commit a compiled plugin, game DLL,
